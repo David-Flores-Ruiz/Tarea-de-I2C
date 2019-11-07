@@ -12,18 +12,23 @@
 #ifndef I2C_H_
 #define I2C_H_
 
-#include "MK64F12.h"
 #include <stdint.h>
-
+#include "MK64F12.h"
+#include "GPIO.h"
+#include "bits.h"
 
 /** Constant that represent the clock enable for GPIO A */
 #define I2C0_CLOCK_GATING 0x40
+#define slave_mode 0
+#define master_mode 1
+
 /**
  * \brief This enum define the I2C channel to be used.
  */
 typedef enum {I2C_0, I2C_1, I2C_2} i2c_channel_t;
-
-
+typedef enum {Slave_mode, Master_mode} master_or_slave_mode_t;
+typedef enum {I2C_RX_mode, I2C_TX_mode} transmit_mode_t;
+typedef enum {Acknowledge, Nacknowledge} ack_or_nack_t;
 
 
 /********************************************************************************************/
@@ -62,14 +67,14 @@ void I2C_init(i2c_channel_t channel, uint32_t system_clock, uint16_t baud_rate);
   	 \return void
 
   */
- void I2C_mst_or_slv_mode(uint8_t mst_or_slv);
+ void I2C_mst_or_slv_mode(master_or_slave_mode_t mst_or_slv);
  /********************************************************************************************/
  /********************************************************************************************/
  /********************************************************************************************/
  /*!
   	 \brief
   	 	 It selects between transmitter mode or receiver mode.
-  	 \param[in] txOrRx If == 1 transmitter mode, if == 0 slave mode.
+  	 \param[in] txOrRx If == 1 transmitter mode, if == 0 receiver mode.
   	 \return void
 
   */
@@ -83,7 +88,7 @@ void I2C_init(i2c_channel_t channel, uint32_t system_clock, uint16_t baud_rate);
   	 \return void
 
   */
- void I2C_nack(void);
+ void I2C_nack_or_ack(ack_or_nack_t TXAK);
  /********************************************************************************************/
  /********************************************************************************************/
  /********************************************************************************************/
@@ -142,7 +147,7 @@ void I2C_wait(void);
  	 \return This function returns a 0 logic if the acknowledge was received and returns 1 logic if the acknowledge was not received.
 
  */
-uint8_t I2C_get_ack(void);
+uint8_t I2C_get_ack_or_nack(void);
 /********************************************************************************************/
 /********************************************************************************************/
 /********************************************************************************************/
@@ -167,5 +172,7 @@ void I2C_start(void);
 
  */
 void I2C_stop(void);
+
+void I2C_enable_interrupt(void);
 
 #endif /* I2C_H_ */
