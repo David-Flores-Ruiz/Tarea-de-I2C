@@ -5,18 +5,19 @@
  *      Author: David Ruiz
  */
 
-
 #include "I2C.h"
 
+#define MULTIPLIER (2U)
 
-void I2C0_IRQHandler(void) {
+/*
+	void I2C0_IRQHandler(void) {
 
-	I2C0->FLT |= I2C_FLT_STARTF_MASK;
-	I2C0->FLT |= I2C_FLT_STOPF_MASK;
+		I2C0->FLT |= I2C_FLT_STARTF_MASK;
+		I2C0->FLT |= I2C_FLT_STOPF_MASK;
 
-	I2C0->S |= I2C_S_IICIF_MASK;		// Limpiamos bandera de interrupcion
-}
-
+		I2C0->S |= I2C_S_IICIF_MASK;		// Limpiamos bandera de interrupcion
+	}
+*/
 
 void I2C_init(i2c_channel_t channel, uint32_t system_clock, uint16_t baud_rate) {
 	if (I2C_0 == channel) {
@@ -33,14 +34,18 @@ void I2C_init(i2c_channel_t channel, uint32_t system_clock, uint16_t baud_rate) 
 		GPIO_data_direction_pin(GPIO_B, GPIO_OUTPUT, bit_2); //SCL Reloj
 		GPIO_data_direction_pin(GPIO_B, GPIO_OUTPUT, bit_3); //SDA Dato
 
-		//uint32_t SCL = 545;
-		I2C0->F |= I2C_F_MULT(2);
-		I2C0->F |= I2C_F_ICR(1);
+		I2C0->C1 |= I2C_C1_IICEN_MASK;	// Habilita el mmodulo de I2C
+
+		// Ayuda de otro equipo tampoco funciono:
+		//uint32_t SCL = (system_clock)/(baud_rate * MULTIPLIER);
+		//I2C0->F |= I2C_F_MULT(1);
+		//I2C0->F |= I2C_F_ICR( SCL );
 		//SCL = (system_clock / baud_rate * MULT);
 
 
 		//** Para la generacion de Baude Rate = I2C clock speed (Hz) / Mult x SCL divider
-
+		I2C0->F |= I2C_F_MULT(1);
+		I2C0->F |= I2C_F_ICR(1);
 
 	}
 	if (I2C_1 == channel) {
@@ -104,12 +109,12 @@ uint8_t I2C_read_byte(void) {
 void I2C_wait(void) {
 	while ((I2C0->S & I2C_S_IICIF_MASK) == FALSE)	// Indica que el bus esta ocupado
 		;
-//	I2C0->S |= I2C_S_IICIF_MASK;
+	I2C0->S |= I2C_S_IICIF_MASK;	// Limpiamos bandera
 }
 
 uint8_t I2C_get_ack_or_nack(void) {
 	uint8_t ack = 0;
-	ack = I2C0->S & ~(I2C_S_RXAK_MASK);	// RXAK = 0, Acknowledge was received
+	ack = I2C0->S & I2C_S_RXAK_MASK;	// RXAK = 0, Acknowledge was received
 	if (ack == FALSE) {		// Return 0, if the acknowledge was received
 		return (FALSE);
 	}
