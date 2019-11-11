@@ -4,96 +4,74 @@
  * @Engineer Team:	D.F.R. / R.G.P.
  */
 
-#include <stdio.h>
 #include "MK64F12.h"
+#include <stdint.h>
+#include <stdio.h>
+
 #include "GPIO.h"
 #include "NVIC.h"
 #include "bits.h"
-#include "I2C.h"
+#include "string.h"
+//#include "I2C.h"
+#include "UART.h"
 
 
 #define SYSTEM_CLOCK (10500000U)
 #define BAUD_RATE (9600U)
 
-#define RTC_ADDRESS_WRITE (0xDE)	//** The last bit = 0, means Write */
-#define RTC_ADDRESS_READ  (0xDF)	//** The last bit = 1, means Reade */
+static uint8_t instruction_1[] = "\033[0;35;43m";
 
-#define Enable_SEC (0x80)
+/**This is mail box to received the information from the serial port*/
+extern uart_mail_box_t g_mail_box_uart_0;
 
-#define RTC_SEC  (0x00)
-#define RTC_MIN  (0x01)
-#define RTC_HOUR (0x02)
-
-
-uint8_t acknowledge = 0xF0;
-uint8_t dataFrom_MCP7940M_RTC = 0;
-
-
-void RTC_write_Seconds(void)
-{
-	I2C_start();//** It configures de I2C in transmitting mode and generates the start signal */
-
-	I2C_write_byte(RTC_ADDRESS_WRITE);//** Writing RTC address in the data register */
-	I2C_wait();	//** Checking if the I2C module is busy */
-	acknowledge = I2C_get_ack_or_nack(); /* Waiting for the acknowledge, this function is able to detect
-	 // Return 0: if an acknowledge was received!!!	 * if an acknowledge was received by checking the RXAK
-	 */
-
-	I2C_write_byte( RTC_SEC);	//** Writing the Register Address */
-	I2C_wait();	//** Checking if the I2C module is busy */
-	acknowledge = I2C_get_ack_or_nack(); /* Waiting for the acknowledge, this function is able to detect
-	 // Return 0: if an acknowledge was received!!!	 * if an acknowledge was received by checking the RXAK
-
-	 */
-	I2C_write_byte(Enable_SEC);	//** Writing the Register Address */
-	I2C_wait();	//** Checking if the I2C module is busy */
-	acknowledge = I2C_get_ack_or_nack();// Waiting for the acknowledge, this function is able to detect
-	I2C_stop();	//** Generating stop signal */
-}
-
-void RTC_read_Seconds(void)
-{
-	I2C_start();//** It configures de I2C in transmitting mode and generates the start signal */
-
-	I2C_write_byte(RTC_ADDRESS_WRITE);//** Writing RTC address in the data register */
-	I2C_wait();	//** Checking if the I2C module is busy */
-	acknowledge = I2C_get_ack_or_nack();
-
-	I2C_write_byte( RTC_SEC);	//** Writing the Register Address */
-	I2C_wait();	//** Checking if the I2C module is busy */
-	acknowledge = I2C_get_ack_or_nack();
-	// Return 0: if an acknowledge was received!!!
-
-	I2C_repeted_start();	// Generating a new start
-	I2C_write_byte(RTC_ADDRESS_READ);//** Writing slave in order to read the previous register */
-	I2C_wait();	//** Checking if the I2C module is busy */
-	acknowledge = I2C_get_ack_or_nack(); /* Waiting for the acknowledge, this function is able to detect
-	 // Return 0: if an acknowledge was received!!!	 * if an acknowledge was received by checking the RXAK
-	 */
-	I2C_tx_rx_mode(I2C_RX_mode);	//** Changing I2C module to receiver mode */
-
-	I2C_nack_or_ack(Nacknowledge);	//** Generating not acknowledge */
-	dataFrom_MCP7940M_RTC = I2C_read_byte();	//** Dummy read */
-	I2C_wait();	//** Checking if the I2C module is busy */
-
-	I2C_stop();	//** Generating stop signal */
-
-	dataFrom_MCP7940M_RTC = I2C_read_byte();	//** Reading the true value */
-}
 
 int main(void) {
-	I2C_init(I2C_0, SYSTEM_CLOCK, BAUD_RATE);
-//	I2C_enable_interrupt();
-	/**Sets the threshold for interrupts, if the interrupt has higher priority constant that the BASEPRI, the interrupt will not be attended*/
-//	NVIC_set_basepri_threshold(PRIORITY_10);
-//	NVIC_enable_interrupt_and_priotity(I2C0_IRQ,PRIORITY_9);	// Protocolo I2C
-//	NVIC_global_enable_interrupts;
+	/**Enables the clock of PortB in order to configures TX and RX of UART peripheral*/
+	SIM->SCGC5 = SIM_SCGC5_PORTB_MASK;
+	/**Configures the pin control register of pin16 in PortB as UART RX*/
+	PORTB->PCR[16] = PORT_PCR_MUX(3);
+	/**Configures the pin control register of pin16 in PortB as UART TX*/
+	PORTB->PCR[17] = PORT_PCR_MUX(3);
+	/**Configures UART 0 to transmit/receive at 11520 bauds with a 21 MHz of clock core*/
+	UART_init (UART_0,  10200000, BD_115200);
+	printf("UART is configured");
+	/**Enables the UART 0 interrupt*/
+	UART_interrupt_enable(UART_0);
+	/**Enables the UART 0 interrupt in the NVIC*/
+	NVIC_enable_interrupt_and_priotity(UART0_IRQ, PRIORITY_10);
+	/**The following sentences send strings to PC using the UART_put_string function. Also, the string
+	 * is coded with terminal code*/
+	/** VT100 command for text in red and background in cyan*/
+	UART_put_string(UART_0,&instruction_1);
+	/*VT100 command for clearing the screen*/
+	UART_put_string(UART_0,"\033[2J");
+	/** VT100 command for text in red and background in green*/
+	UART_put_string(UART_0,"\033[0;32;41m");
+	/** VT100 command for positioning the cursor in x and y position*/
+	UART_put_string(UART_0,"\033[10;10H");
+	UART_put_string(UART_0, "SISTEMAS EMBEBIDOS I\r");
+	/** VT100 command for positioning the cursor in x and y position*/
+	UART_put_string(UART_0,"\033[11;10H");
+	UART_put_string(UART_0, "    ITESO\r");
+	/** VT100 command for positioning the cursor in x and y position*/
+	UART_put_string(UART_0,"\033[12;10H");
 
-	RTC_write_Seconds();
+	/**Enables interrupts*/
+	NVIC_global_enable_interrupts;
+
 
     while (1) {
-		RTC_read_Seconds();
-	}
 
+		if (g_mail_box_uart_0.flag)
+		{
+			/**Sends to the PCA the received data in the mailbox*/
+			UART_put_char(UART_0, g_mail_box_uart_0.mailBox);
+
+			/**clear the reception flag*/
+			g_mail_box_uart_0.flag = 0;
+		}
+
+	}
     return 0 ;
 }
+
