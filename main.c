@@ -12,9 +12,9 @@
 #include "NVIC.h"
 #include "bits.h"
 #include "string.h"
-//#include "I2C.h"
+#include "I2C.h"
 #include "UART.h"
-
+#include "RTC.h"
 
 #define SYSTEM_CLOCK (10500000U)
 #define BAUD_RATE (9600U)
@@ -56,11 +56,21 @@ int main(void) {
 	/** VT100 command for positioning the cursor in x and y position*/
 	UART_put_string(UART_0,"\033[12;10H");
 
+
+
+
+	I2C_init(I2C_0, SYSTEM_CLOCK, BAUD_RATE);
+	RTC_write_Seconds();	// Configura para leer registro de Segundos
+
+
+
 	/**Enables interrupts*/
 	NVIC_global_enable_interrupts;
 
 
     while (1) {
+
+		RTC_read_Seconds();	// Lee los segundos del RTC
 
 		if (g_mail_box_uart_0.flag)
 		{
