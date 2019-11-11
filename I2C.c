@@ -36,6 +36,9 @@ void I2C_init(i2c_channel_t channel, uint32_t system_clock, uint16_t baud_rate) 
 
 		I2C0->C1 |= I2C_C1_IICEN_MASK;	// Habilita el mmodulo de I2C
 
+		// Ayuda de otro equipo:
+		//I2C0->SMB |= I2C_SMB_FACK_MASK;
+
 		// Ayuda de otro equipo tampoco funciono:
 		//uint32_t SCL = (system_clock)/(baud_rate * MULTIPLIER);
 		//I2C0->F |= I2C_F_MULT(1);
@@ -44,8 +47,8 @@ void I2C_init(i2c_channel_t channel, uint32_t system_clock, uint16_t baud_rate) 
 
 
 		//** Para la generacion de Baude Rate = I2C clock speed (Hz) / Mult x SCL divider
-		I2C0->F |= I2C_F_MULT(1);
-		I2C0->F |= I2C_F_ICR(1);
+		I2C0->F |= I2C_F_MULT(2);	// Valores no se porque
+		I2C0->F |= I2C_F_ICR(0);	// Valores no se porque
 
 	}
 	if (I2C_1 == channel) {
@@ -61,7 +64,7 @@ uint8_t I2C_busy(void) {
 	/* EL bit_5 de BUSY está en: 0 Bus es idle
 	 *				   			 1 Bus es Busy
 	 */
-	status = I2C0->S & I2C_S_BUSY_MASK;
+	status = (I2C0->S & I2C_S_BUSY_MASK)>>I2C_S_BUSY_SHIFT;
 	return (status);
 }
 
@@ -109,7 +112,7 @@ uint8_t I2C_read_byte(void) {
 void I2C_wait(void) {
 	while ((I2C0->S & I2C_S_IICIF_MASK) == FALSE)	// Indica que el bus esta ocupado
 		;
-	I2C0->S |= I2C_S_IICIF_MASK;	// Limpiamos bandera
+	I2C0->S |= I2C_S_IICIF_MASK;		// Limpiamos bandera
 }
 
 uint8_t I2C_get_ack_or_nack(void) {
@@ -121,16 +124,17 @@ uint8_t I2C_get_ack_or_nack(void) {
 	if (ack == TRUE) {		// Return 1, if the acknowledge was NOT received, (It is a Nacknowledge)
 		return (TRUE);
 	}
+	return TRUE;	// Nunca llega aqui pero quita un Warning! :)
 }
 
 void I2C_start(void) {
 	I2C_mst_or_slv_mode(Master_mode);	// Change from 0 to 1, START!!!
-	I2C_tx_rx_mode(I2C_TX_mode);	// Change to transmitter mode
+	I2C_tx_rx_mode(I2C_TX_mode);		// Change to transmitter mode
 }
 
 void I2C_stop(void) {
 	I2C_mst_or_slv_mode(Slave_mode);	// Change from 1 to 0, STOP!
-	I2C_tx_rx_mode(I2C_RX_mode);	// Change to receiver mode
+	I2C_tx_rx_mode(I2C_RX_mode);		// Change to receiver mode
 }
 
 void I2C_enable_interrupt(void) {
