@@ -8,6 +8,12 @@
 #ifndef TERATERM_H_
 #define TERATERM_H_
 
+#include <stdint.h>
+#include "string.h"
+
+//** For show the actual Menu for the user */
+void TeraTerm_Menu(void);
+
 //** For show the actual time in the terminal */
 void TeraTerm_Actual_Time(void);
 
