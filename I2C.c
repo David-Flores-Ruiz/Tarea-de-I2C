@@ -31,8 +31,8 @@ void I2C_init(i2c_channel_t channel, uint32_t system_clock, uint16_t baud_rate) 
 		GPIO_pin_control_register(GPIO_B, bit_3, &I2C_config);
 		GPIO_clear_pin(GPIO_B, bit_2);	// OFF
 		GPIO_clear_pin(GPIO_B, bit_3);	// OFF
-		GPIO_data_direction_pin(GPIO_B, GPIO_OUTPUT, bit_2); //SCL Reloj
-		GPIO_data_direction_pin(GPIO_B, GPIO_OUTPUT, bit_3); //SDA Dato
+		GPIO_data_direction_pin(GPIO_B, GPIO_OUTPUT, bit_2); //SCL Reloj naranja
+		GPIO_data_direction_pin(GPIO_B, GPIO_OUTPUT, bit_3); //SDA Dato azul
 
 		I2C0->C1 |= I2C_C1_IICEN_MASK;	// Habilita el mmodulo de I2C
 
